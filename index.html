@@ -202,16 +202,21 @@
 
         // Upgrade Definitions
         const upgrades = [
-            { id: 'cursor', name: 'Cursor', cost: 15, baseCps: 0.1, count: 0, emoji: '👆' },
-            { id: 'grandma', name: 'Grandma', cost: 100, baseCps: 1, count: 0, emoji: '👵' },
-            { id: 'farm', name: 'Farm', cost: 1100, baseCps: 8, count: 0, emoji: '🌾' },
-            { id: 'factory', name: 'Factory', cost: 12000, baseCps: 47, count: 0, emoji: '🏭' },
-            { id: 'mine', name: 'Mine', cost: 130000, baseCps: 260, count: 0, emoji: '⛏️' },
+            { id: 'cursor', name: 'Cursor', baseCost: 15, baseCps: 0.1, count: 0, currentCost: 15, emoji: '👆' },
+            { id: 'grandma', name: 'Grandma', baseCost: 100, baseCps: 1, count: 0, currentCost: 100, emoji: '👵' },
+            { id: 'farm', name: 'Farm', baseCost: 1100, baseCps: 8, count: 0, currentCost: 1100, emoji: '🌾' },
+            { id: 'factory', name: 'Factory', baseCost: 12000, baseCps: 47, count: 0, currentCost: 12000, emoji: '🏭' },
+            { id: 'mine', name: 'Mine', baseCost: 130000, baseCps: 260, count: 0, currentCost: 130000, emoji: '⛏️' },
         ];
 
-        // Load upgrade counts from localStorage
+        // Load upgrade counts and current costs from localStorage
         upgrades.forEach(upgrade => {
             upgrade.count = parseInt(localStorage.getItem(`${upgrade.id}Count`) || '0');
+            // If current cost is saved, use it, otherwise calculate based on baseCost and count
+            upgrade.currentCost = parseInt(localStorage.getItem(`${upgrade.id}Cost`) || upgrade.baseCost);
+            // Re-calculate cost based on count to ensure consistency if baseCost changed or storage was cleared
+            // This ensures the cost always scales correctly with the number of items owned
+            upgrade.currentCost = Math.floor(upgrade.baseCost * (1.15 ** upgrade.count));
         });
 
         // Function to show a custom message box
@@ -244,17 +249,17 @@
         // Function to buy an upgrade
         function buyUpgrade(upgradeId) {
             const upgrade = upgrades.find(u => u.id === upgradeId);
-            if (upgrade && cookies >= upgrade.cost) {
-                cookies -= upgrade.cost;
+            if (upgrade && cookies >= upgrade.currentCost) {
+                cookies -= upgrade.currentCost;
                 upgrade.count++;
                 cps += upgrade.baseCps;
-                upgrade.cost = Math.floor(upgrade.cost * 1.15); // Increase cost for next purchase
+                upgrade.currentCost = Math.floor(upgrade.baseCost * (1.15 ** upgrade.count)); // Update cost for next purchase
                 updateCookieDisplay();
                 updateCpsDisplay();
                 renderUpgrades(); // Re-render to update counts and button states
                 saveGame();
             } else if (upgrade) {
-                showMessageBox(`Not enough cookies for ${upgrade.name}! You need ${upgrade.cost} cookies.`);
+                showMessageBox(`Not enough cookies for ${upgrade.name}! You need ${upgrade.currentCost} cookies.`);
             }
         }
 
@@ -267,9 +272,9 @@
                 upgradeItem.innerHTML = `
                     <div class="upgrade-info">
                         <strong>${upgrade.emoji} ${upgrade.name} (x${upgrade.count})</strong>
-                        <span>Cost: ${upgrade.cost} cookies | Generates: ${upgrade.baseCps.toFixed(1)} CPS</span>
+                        <span>Cost: ${upgrade.currentCost} cookies | Generates: ${upgrade.baseCps.toFixed(1)} CPS</span>
                     </div>
-                    <button id="buy-${upgrade.id}" ${cookies < upgrade.cost ? 'disabled' : ''}>Buy</button>
+                    <button id="buy-${upgrade.id}" ${cookies < upgrade.currentCost ? 'disabled' : ''}>Buy</button>
                 `;
                 upgradeList.appendChild(upgradeItem);
 
@@ -292,6 +297,7 @@
             localStorage.setItem('cps', cps.toString());
             upgrades.forEach(upgrade => {
                 localStorage.setItem(`${upgrade.id}Count`, upgrade.count.toString());
+                localStorage.setItem(`${upgrade.id}Cost`, upgrade.currentCost.toString()); // Save current cost
             });
         }
 
