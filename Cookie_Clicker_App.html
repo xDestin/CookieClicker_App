@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Clicker</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f0f8ff, #add8e6); /* Light blue gradient */
+            font-family: 'Comic Sans MS', cursive, sans-serif; /* Playful font */
+            color: #333;
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            margin: 20px auto;
+            border: 2px solid #a0522d; /* Sienna border */
+        }
+
+        h1 {
+            color: #a0522d; /* Sienna */
+            margin-bottom: 20px;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #cookieCount {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            font-weight: bold;
+            color: #8b4513; /* SaddleBrown */
+            margin-bottom: 25px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
+
+        #cookieButton {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.1s ease-out;
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+        }
+
+        #cookieButton img {
+            width: clamp(150px, 40vw, 250px); /* Responsive cookie size */
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            filter: drop-shadow(5px 5px 10px rgba(0,0,0,0.3));
+        }
+
+        #cookieButton:active {
+            transform: scale(0.95);
+        }
+
+        .upgrades-section {
+            margin-top: 30px;
+            border-top: 1px dashed #ccc;
+            padding-top: 20px;
+        }
+
+        h2 {
+            color: #a0522d;
+            margin-bottom: 15px;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+        }
+
+        .upgrade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ffe4b5; /* Moccasin */
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border: 1px solid #deb887; /* BurlyWood */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .upgrade-item button {
+            background-color: #8b4513; /* SaddleBrown */
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        }
+
+        .upgrade-item button:hover {
+            background-color: #654321; /* Darker brown */
+        }
+
+        .upgrade-item button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .upgrade-info {
+            text-align: left;
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        .upgrade-info strong {
+            display: block;
+            font-size: 1.1rem;
+            color: #5a2d0c;
+        }
+
+        .upgrade-info span {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        #cpsDisplay {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #5a2d0c;
+        }
+
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: none; /* Hidden by default */
+            z-index: 1000;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .message-box button {
+            background-color: #8b4513;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍪 Cookie Clicker 🍪</h1>
+        <div id="cookieCount">0 Cookies</div>
+        <button id="cookieButton">
+            <img src="https://placehold.co/250x250/8b4513/ffffff?text=Cookie" alt="Giant Cookie">
+        </button>
+        <div id="cpsDisplay">0 Cookies per second</div>
+
+        <div class="upgrades-section">
+            <h2>Upgrades</h2>
+            <div class="upgrade-list" id="upgradeList">
+                <!-- Upgrades will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="messageBox" class="message-box">
+        <p id="messageText"></p>
+        <button id="messageBoxClose">OK</button>
+    </div>
+
+    <script>
+        // DOM Elements
+        const cookieCountDisplay = document.getElementById('cookieCount');
+        const cookieButton = document.getElementById('cookieButton');
+        const upgradeList = document.getElementById('upgradeList');
+        const cpsDisplay = document.getElementById('cpsDisplay');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const messageBoxCloseButton = document.getElementById('messageBoxClose');
+
+        // Game State
+        let cookies = parseInt(localStorage.getItem('cookies') || '0');
+        let cps = parseInt(localStorage.getItem('cps') || '0'); // Cookies per second
+
+        // Upgrade Definitions
+        const upgrades = [
+            { id: 'cursor', name: 'Cursor', cost: 15, baseCps: 0.1, count: 0, emoji: '👆' },
+            { id: 'grandma', name: 'Grandma', cost: 100, baseCps: 1, count: 0, emoji: '👵' },
+            { id: 'farm', name: 'Farm', cost: 1100, baseCps: 8, count: 0, emoji: '🌾' },
+            { id: 'factory', name: 'Factory', cost: 12000, baseCps: 47, count: 0, emoji: '🏭' },
+            { id: 'mine', name: 'Mine', cost: 130000, baseCps: 260, count: 0, emoji: '⛏️' },
+        ];
+
+        // Load upgrade counts from localStorage
+        upgrades.forEach(upgrade => {
+            upgrade.count = parseInt(localStorage.getItem(`${upgrade.id}Count`) || '0');
+        });
+
+        // Function to show a custom message box
+        function showMessageBox(message) {
+            messageText.textContent = message;
+            messageBox.style.display = 'block';
+        }
+
+        // Function to hide the custom message box
+        messageBoxCloseButton.addEventListener('click', () => {
+            messageBox.style.display = 'none';
+        });
+
+        // Update display functions
+        function updateCookieDisplay() {
+            cookieCountDisplay.textContent = `${Math.floor(cookies)} Cookies`;
+        }
+
+        function updateCpsDisplay() {
+            cpsDisplay.textContent = `${cps.toFixed(1)} Cookies per second`;
+        }
+
+        // Cookie click handler
+        cookieButton.addEventListener('click', () => {
+            cookies++;
+            updateCookieDisplay();
+            saveGame();
+        });
+
+        // Function to buy an upgrade
+        function buyUpgrade(upgradeId) {
+            const upgrade = upgrades.find(u => u.id === upgradeId);
+            if (upgrade && cookies >= upgrade.cost) {
+                cookies -= upgrade.cost;
+                upgrade.count++;
+                cps += upgrade.baseCps;
+                upgrade.cost = Math.floor(upgrade.cost * 1.15); // Increase cost for next purchase
+                updateCookieDisplay();
+                updateCpsDisplay();
+                renderUpgrades(); // Re-render to update counts and button states
+                saveGame();
+            } else if (upgrade) {
+                showMessageBox(`Not enough cookies for ${upgrade.name}! You need ${upgrade.cost} cookies.`);
+            }
+        }
+
+        // Render upgrades dynamically
+        function renderUpgrades() {
+            upgradeList.innerHTML = ''; // Clear existing list
+            upgrades.forEach(upgrade => {
+                const upgradeItem = document.createElement('div');
+                upgradeItem.classList.add('upgrade-item');
+                upgradeItem.innerHTML = `
+                    <div class="upgrade-info">
+                        <strong>${upgrade.emoji} ${upgrade.name} (x${upgrade.count})</strong>
+                        <span>Cost: ${upgrade.cost} cookies | Generates: ${upgrade.baseCps.toFixed(1)} CPS</span>
+                    </div>
+                    <button id="buy-${upgrade.id}" ${cookies < upgrade.cost ? 'disabled' : ''}>Buy</button>
+                `;
+                upgradeList.appendChild(upgradeItem);
+
+                // Add event listener to the newly created button
+                const buyButton = document.getElementById(`buy-${upgrade.id}`);
+                buyButton.addEventListener('click', () => buyUpgrade(upgrade.id));
+            });
+        }
+
+        // Game loop for CPS
+        function gameLoop() {
+            cookies += cps / 10; // Add cookies every 100ms
+            updateCookieDisplay();
+            requestAnimationFrame(gameLoop); // Use requestAnimationFrame for smoother animation
+        }
+
+        // Save game state to localStorage
+        function saveGame() {
+            localStorage.setItem('cookies', Math.floor(cookies).toString());
+            localStorage.setItem('cps', cps.toString());
+            upgrades.forEach(upgrade => {
+                localStorage.setItem(`${upgrade.id}Count`, upgrade.count.toString());
+            });
+        }
+
+        // Initial setup
+        updateCookieDisplay();
+        updateCpsDisplay();
+        renderUpgrades();
+        gameLoop(); // Start the game loop
+        setInterval(saveGame, 5000); // Save game every 5 seconds
+    </script>
+</body>
+</html>
